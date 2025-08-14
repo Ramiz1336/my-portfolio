@@ -6,14 +6,18 @@ import { TiLocationArrow } from "react-icons/ti";
 
 import Button from "./Button";
 
-const navItems = ["Nexus", "Vault", "Prologue", "About", "Contact"];
+// IMPORTANT:
+// 1) Put your resume at: public/assets/resume.pdf
+// 2) Put your audio at:  public/audio/loop.mp3
+// 3) Ensure Button forwards onClick: (<button onClick={onClick} ... />)
+
+const RESUME_HREF = "/assets/resume.pdf";
+const navItems = ["Projects", "Experience", "About", "Contact"];
 
 const NavBar = () => {
-  // State for toggling audio and visual indicator
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [isIndicatorActive, setIsIndicatorActive] = useState(false);
 
-  // Refs for audio and navigation container
   const audioElementRef = useRef(null);
   const navContainerRef = useRef(null);
 
@@ -21,46 +25,113 @@ const NavBar = () => {
   const [isNavVisible, setIsNavVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
-  // Toggle audio and visual indicator
-  const toggleAudioIndicator = () => {
-    setIsAudioPlaying((prev) => !prev);
-    setIsIndicatorActive((prev) => !prev);
+  const toggleAudioIndicator = async () => {
+    const audio = audioElementRef.current;
+    if (!audio) return;
+
+    try {
+      if (!isAudioPlaying) {
+        await audio.play();
+        setIsAudioPlaying(true);
+        setIsIndicatorActive(true);
+      } else {
+        audio.pause();
+        setIsAudioPlaying(false);
+        setIsIndicatorActive(false);
+      }
+    } catch (err) {
+      // If blocked, rely on first interaction
+      attachFirstInteractionPlay();
+    }
   };
 
-  // Manage audio playback
+  // Try to autoplay on load (muted first to comply with browser policies)
   useEffect(() => {
-    if (isAudioPlaying) {
-      audioElementRef.current.play();
-    } else {
-      audioElementRef.current.pause();
-    }
-  }, [isAudioPlaying]);
+    const audio = audioElementRef.current;
+    if (!audio) return;
 
+    const tryAutoplay = async () => {
+      try {
+        audio.muted = true; // muted autoplay is usually allowed
+        audio.autoplay = true;
+        // Safari/iOS quirks: keep preload so it buffers
+        await audio.play();
+        // Unmute shortly after successful start
+        setTimeout(() => {
+          audio.muted = false;
+          audio.volume = 1;
+          setIsAudioPlaying(true);
+          setIsIndicatorActive(true);
+        }, 300);
+      } catch (err) {
+        // If autoplay is blocked, wait for first interaction
+        attachFirstInteractionPlay();
+      }
+    };
+
+    const attachFirstInteractionPlay = () => {
+      const resume = () => {
+        audio.muted = false;
+        audio.volume = 1;
+        audio.play().catch(() => {});
+        setIsAudioPlaying(true);
+        setIsIndicatorActive(true);
+        window.removeEventListener("pointerdown", resume);
+        window.removeEventListener("keydown", resume);
+        window.removeEventListener("touchstart", resume);
+        window.removeEventListener("scroll", resume);
+      };
+      window.addEventListener("pointerdown", resume, { once: true });
+      window.addEventListener("keydown", resume, { once: true });
+      window.addEventListener("touchstart", resume, { once: true });
+      window.addEventListener("scroll", resume, { once: true });
+    };
+
+    tryAutoplay();
+
+    // cleanup interaction listeners on unmount (in case)
+    return () => {
+      window.removeEventListener("pointerdown", () => {});
+      window.removeEventListener("keydown", () => {});
+      window.removeEventListener("touchstart", () => {});
+      window.removeEventListener("scroll", () => {});
+    };
+  }, []);
+
+  // Show/hide navbar on scroll
   useEffect(() => {
     if (currentScrollY === 0) {
-      // Topmost position: show navbar without floating-nav
       setIsNavVisible(true);
-      navContainerRef.current.classList.remove("floating-nav");
+      navContainerRef.current?.classList.remove("floating-nav");
     } else if (currentScrollY > lastScrollY) {
-      // Scrolling down: hide navbar and apply floating-nav
       setIsNavVisible(false);
-      navContainerRef.current.classList.add("floating-nav");
+      navContainerRef.current?.classList.add("floating-nav");
     } else if (currentScrollY < lastScrollY) {
-      // Scrolling up: show navbar with floating-nav
       setIsNavVisible(true);
-      navContainerRef.current.classList.add("floating-nav");
+      navContainerRef.current?.classList.add("floating-nav");
     }
-
     setLastScrollY(currentScrollY);
   }, [currentScrollY, lastScrollY]);
 
+  // GSAP animation for nav show/hide
   useEffect(() => {
+    if (!navContainerRef.current) return;
     gsap.to(navContainerRef.current, {
       y: isNavVisible ? 0 : -100,
       opacity: isNavVisible ? 1 : 0,
       duration: 0.2,
     });
   }, [isNavVisible]);
+
+  // Download resume (works on any bundler because the file is in /public)
+  const handleResumeDownload = () => {
+    const link = document.createElement("a");
+    link.href = RESUME_HREF; // "/assets/resume.pdf"
+    link.download = "Sk_Ramiz_Raja_Resume.pdf";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div
@@ -69,19 +140,20 @@ const NavBar = () => {
     >
       <header className="absolute top-1/2 w-full -translate-y-1/2">
         <nav className="flex size-full items-center justify-between p-4">
-          {/* Logo and Product button */}
           <div className="flex items-center gap-7">
             <img src="/img/logo.png" alt="logo" className="w-10" />
 
+            {/* NOTE: This Button must forward onClick for the download to work */}
             <Button
-              id="product-button"
-              title="Products"
+              id="resume-button"
+              title="Resume"
               rightIcon={<TiLocationArrow />}
+              onClick={handleResumeDownload}
+              // If you want it visible on mobile too, remove "hidden md:flex"
               containerClass="bg-blue-50 md:flex hidden items-center justify-center gap-1"
             />
           </div>
 
-          {/* Navigation Links and Audio Button */}
           <div className="flex h-full items-center">
             <div className="hidden md:block">
               {navItems.map((item, index) => (
@@ -95,15 +167,20 @@ const NavBar = () => {
               ))}
             </div>
 
+            {/* Audio toggle + hidden audio element */}
             <button
               onClick={toggleAudioIndicator}
               className="ml-10 flex items-center space-x-0.5"
+              aria-pressed={isAudioPlaying}
+              aria-label={isAudioPlaying ? "Pause music" : "Play music"}
             >
               <audio
                 ref={audioElementRef}
                 className="hidden"
                 src="/audio/loop.mp3"
                 loop
+                preload="auto"
+                muted
               />
               {[1, 2, 3, 4].map((bar) => (
                 <div
@@ -111,9 +188,7 @@ const NavBar = () => {
                   className={clsx("indicator-line", {
                     active: isIndicatorActive,
                   })}
-                  style={{
-                    animationDelay: `${bar * 0.1}s`,
-                  }}
+                  style={{ animationDelay: `${bar * 0.1}s` }}
                 />
               ))}
             </button>

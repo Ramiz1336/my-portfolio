@@ -11,9 +11,15 @@ function App() {
     <main className="relative min-h-screen w-screen overflow-x-hidden">
       <NavBar />
       <Hero />
-      <About />
-      <Features />
-      <Story />
+      <div id="about">
+        <About />
+      </div>
+      <div id="projects">
+        <Features />
+      </div>
+      <div id="experience">
+        <Story />
+      </div>
       <Contact />
       <Footer />
     </main>

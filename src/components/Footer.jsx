@@ -1,10 +1,10 @@
-import { FaDiscord, FaTwitter, FaYoutube, FaMedium } from "react-icons/fa";
+import { FaGithub, FaLinkedin, FaTwitter, FaEnvelope } from "react-icons/fa";
 
 const socialLinks = [
-  { href: "https://discord.com", icon: <FaDiscord /> },
+  { href: "https://github.com", icon: <FaGithub /> },
+  { href: "https://linkedin.com", icon: <FaLinkedin /> },
   { href: "https://twitter.com", icon: <FaTwitter /> },
-  { href: "https://youtube.com", icon: <FaYoutube /> },
-  { href: "https://medium.com", icon: <FaMedium /> },
+  { href: "mailto:starkramizsk@gmail.com", icon: <FaEnvelope /> },
 ];
 
 const Footer = () => {
@@ -12,10 +12,10 @@ const Footer = () => {
     <footer className="w-screen bg-[#5542ff] py-4 text-black">
       <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 md:flex-row">
         <p className="text-center text-sm font-light md:text-left">
-          ©Nova 2024. All rights reserved
+          © Sk Ramiz Raja 2024. All rights reserved
         </p>
 
-        <div className="flex justify-center gap-4  md:justify-start">
+        <div className="flex justify-center gap-4 md:justify-start">
           {socialLinks.map((link, index) => (
             <a
               key={index}
@@ -30,10 +30,10 @@ const Footer = () => {
         </div>
 
         <a
-          href="#privacy-policy"
+          href="mailto:starkramizsk@gmail.com"
           className="text-center text-sm font-light hover:underline md:text-right"
         >
-          Privacy Policy
+          starkramizsk@gmail.com
         </a>
       </div>
     </footer>
